@@ -56,6 +56,6 @@ The **live Balanced Ternary (`T, 0, 1`) Uptime Clock** computed every second in 
 ## 5. Inspired By
 
 - Lyra Rebane's [x86CSS](https://lyra.horse/x86css/) ([GitHub](https://github.com/rebane2001/x86CSS)) — a working CSS-only 8086 CPU emulator.
-- Lyra Rebane's **CSS-DOS** — DOS, Windows 1.01, and Doom in CSS.
+- Ahmed Amer's **CSS-DOS** — DOS, Windows 1.01, and Doom in CSS. *(Attribution corrected by Kehai: the original report credited Lyra Rebane, following ambiguous wording in our spec.)*
 
 CSSOS takes a complementary path: instead of emulating an x86 CPU inside stylesheets, the stylesheet *is* the operating system.
