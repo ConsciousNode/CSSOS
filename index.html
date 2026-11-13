@@ -1,0 +1,1706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSSOS v1.0 — ConsciousNode SoftWorks</title>
+<!--
+  CSSOS: A Graphical Operating System Made Entirely of CSS
+  Copyright (c) 2026 ConsciousNode SoftWorks — MIT License
+  Zero JavaScript. Zero external files. Works offline.
+  Inspired by Lyra Rebane's x86CSS and CSS-DOS.
+-->
+<style>
+  /* === TYPED PROPERTIES FOR LIVE UPTIME CLOCK & BALANCED TERNARY === */
+  @property --up-sec {
+    syntax: '<integer>';
+    initial-value: 0;
+    inherits: true;
+  }
+
+  @keyframes uptime-tick {
+    from { --up-sec: 0; }
+    to { --up-sec: 86400; }
+  }
+
+  /* Balanced ternary digit alphabet: 1->0, 2->1, 3->T */
+  @counter-style btrit {
+    system: cyclic;
+    symbols: "0" "1" "T";
+  }
+
+  /* === BOOT SEQUENCE ANIMATIONS === */
+  @keyframes boot-fade-out {
+    0%, 88% { opacity: 1; visibility: visible; pointer-events: auto; }
+    100% { opacity: 0; visibility: hidden; pointer-events: none; }
+  }
+
+  @keyframes boot-line-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes boot-bar-fill {
+    0% { width: 0%; }
+    25% { width: 28%; }
+    60% { width: 72%; }
+    90% { width: 96%; }
+    100% { width: 100%; }
+  }
+
+  @keyframes blink-cursor {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+
+  /* === RESET & ROOT VARIABLES (DEFAULT: NORDIC DARK) === */
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px;
+    user-select: none;
+  }
+
+  .os-root {
+    --bg-desktop: radial-gradient(circle at 20% 20%, #1e293b 0%, #0f172a 60%, #020617 100%);
+    --bg-win: #111827;
+    --bg-win-head: #1e293b;
+    --bg-win-head-active: #2563eb;
+    --bg-surface: #1f2937;
+    --bg-inset: #0b1120;
+    --bg-taskbar: rgba(15, 23, 42, 0.92);
+    --fg: #e2e8f0;
+    --fg-muted: #94a3b8;
+    --fg-head: #f8fafc;
+    --accent: #38bdf8;
+    --accent-2: #a855f7;
+    --ok: #22c55e;
+    --warn: #f59e0b;
+    --err: #ef4444;
+    --border: #334155;
+    --shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+    --radius: 8px;
+    --font-mono: ui-monospace, "Cascadia Mono", "Fira Code", Consolas, monospace;
+
+    /* Live uptime calculations */
+    animation: uptime-tick 86400s steps(86400, end) infinite;
+    --up-s: mod(var(--up-sec), 60);
+    --up-m: mod(round(down, var(--up-sec) / 60), 60);
+    --up-h: round(down, var(--up-sec) / 3600);
+
+    /* Balanced ternary digits (10 trits, covers >8 hours) */
+    --bt0: calc(mod(var(--up-sec), 3) + 1);
+    --bt1: calc(mod(round(down, (var(--up-sec) + 1) / 3), 3) + 1);
+    --bt2: calc(mod(round(down, (var(--up-sec) + 4) / 9), 3) + 1);
+    --bt3: calc(mod(round(down, (var(--up-sec) + 13) / 27), 3) + 1);
+    --bt4: calc(mod(round(down, (var(--up-sec) + 40) / 81), 3) + 1);
+    --bt5: calc(mod(round(down, (var(--up-sec) + 121) / 243), 3) + 1);
+    --bt6: calc(mod(round(down, (var(--up-sec) + 364) / 729), 3) + 1);
+    --bt7: calc(mod(round(down, (var(--up-sec) + 1093) / 2187), 3) + 1);
+    --bt8: calc(mod(round(down, (var(--up-sec) + 3280) / 6561), 3) + 1);
+    --bt9: calc(mod(round(down, (var(--up-sec) + 9841) / 19683), 3) + 1);
+
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-desktop);
+    color: var(--fg);
+  }
+
+  /* === THEMES (SETTINGS APP) === */
+  .os-root:has(#theme-amber:checked) {
+    --bg-desktop: radial-gradient(circle at 50% 40%, #1c1405 0%, #0d0902 100%);
+    --bg-win: #120d03;
+    --bg-win-head: #261b06;
+    --bg-win-head-active: #b45309;
+    --bg-surface: #1f1605;
+    --bg-inset: #080501;
+    --bg-taskbar: rgba(18, 12, 2, 0.96);
+    --fg: #fbbf24;
+    --fg-muted: #b45309;
+    --fg-head: #fef3c7;
+    --accent: #f59e0b;
+    --accent-2: #fde68a;
+    --ok: #84cc16;
+    --warn: #fb923c;
+    --err: #ef4444;
+    --border: #78350f;
+    --radius: 2px;
+    font-family: var(--font-mono);
+  }
+
+  .os-root:has(#theme-classic:checked) {
+    --bg-desktop: #008080;
+    --bg-win: #c0c0c0;
+    --bg-win-head: #808080;
+    --bg-win-head-active: #000080;
+    --bg-surface: #d4d0c8;
+    --bg-inset: #ffffff;
+    --bg-taskbar: #c0c0c0;
+    --fg: #111111;
+    --fg-muted: #4b5563;
+    --fg-head: #ffffff;
+    --accent: #000080;
+    --accent-2: #1084d0;
+    --ok: #008000;
+    --warn: #b45309;
+    --err: #cc0000;
+    --border: #404040;
+    --shadow: 3px 3px 0 #000000;
+    --radius: 0px;
+  }
+
+  .os-root:has(#theme-vapor:checked) {
+    --bg-desktop: linear-gradient(135deg, #2b1055 0%, #7597de 100%);
+    --bg-win: #1a1033;
+    --bg-win-head: #2d1b54;
+    --bg-win-head-active: #db2777;
+    --bg-surface: #261647;
+    --bg-inset: #120924;
+    --bg-taskbar: rgba(26, 16, 51, 0.92);
+    --fg: #f5d0fe;
+    --fg-muted: #c084fc;
+    --fg-head: #ffffff;
+    --accent: #22d3ee;
+    --accent-2: #f472b6;
+    --ok: #34d399;
+    --warn: #fbbf24;
+    --err: #fb7185;
+    --border: #7e22ce;
+    --radius: 10px;
+  }
+
+  /* Hidden state controls */
+  .state-ctrl {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 0;
+    height: 0;
+  }
+
+  /* === BOOT SCREEN === */
+  .boot-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: #05080f;
+    color: #38bdf8;
+    font-family: var(--font-mono);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+    animation: boot-fade-out 4.4s ease forwards;
+  }
+
+  #skip-boot:checked ~ .boot-screen {
+    display: none;
+  }
+
+  .boot-box {
+    width: min(620px, 94vw);
+    border: 1px solid #1e293b;
+    background: #0b1120;
+    padding: 24px;
+    border-radius: 6px;
+    box-shadow: 0 0 50px rgba(56, 189, 248, 0.15);
+  }
+
+  .boot-logo {
+    margin: 0 0 14px 0;
+    font-size: 12px;
+    line-height: 1.15;
+    color: #38bdf8;
+    white-space: pre;
+    font-weight: 700;
+  }
+
+  .boot-line {
+    opacity: 0;
+    margin: 4px 0;
+    font-size: 12px;
+    color: #cbd5e1;
+    animation: boot-line-in 0.25s ease forwards;
+  }
+  .boot-line:nth-of-type(1) { animation-delay: 0.2s; }
+  .boot-line:nth-of-type(2) { animation-delay: 0.7s; }
+  .boot-line:nth-of-type(3) { animation-delay: 1.2s; }
+  .boot-line:nth-of-type(4) { animation-delay: 1.7s; }
+  .boot-line:nth-of-type(5) { animation-delay: 2.2s; }
+  .boot-line:nth-of-type(6) { animation-delay: 2.7s; color: #4ade80; }
+
+  .boot-progress-wrap {
+    margin-top: 16px;
+    height: 10px;
+    background: #1e293b;
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .boot-progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #38bdf8, #a855f7);
+    animation: boot-bar-fill 3.4s ease forwards;
+  }
+
+  .skip-boot-btn {
+    display: inline-block;
+    margin-top: 14px;
+    padding: 4px 10px;
+    font-size: 11px;
+    color: #94a3b8;
+    border: 1px solid #334155;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .skip-boot-btn:hover { color: #f8fafc; border-color: #38bdf8; }
+
+  /* === DESKTOP & ICONS === */
+  .desktop {
+    position: relative;
+    width: 100%;
+    height: calc(100% - 44px);
+    padding: 16px;
+    overflow: hidden;
+  }
+
+  .desktop-icons {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 14px;
+    height: 100%;
+    width: fit-content;
+  }
+
+  .d-icon {
+    width: 82px;
+    padding: 8px 6px;
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    text-align: center;
+    cursor: pointer;
+    color: var(--fg-head);
+    text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+    border: 1px solid transparent;
+  }
+  .d-icon:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+  .d-icon-glyph {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    font-size: 20px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+  }
+  .d-icon span {
+    font-size: 11px;
+    line-height: 1.2;
+    word-break: break-word;
+  }
+
+  /* === FOOTER / VOLATILITY BANNER === */
+  .desktop-credit {
+    position: absolute;
+    right: 14px;
+    bottom: 10px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.68);
+    text-align: right;
+    pointer-events: auto;
+    background: rgba(0,0,0,0.35);
+    padding: 6px 10px;
+    border-radius: 6px;
+    backdrop-filter: blur(4px);
+  }
+  .desktop-credit a { color: #7dd3fc; text-decoration: none; }
+  .desktop-credit a:hover { text-decoration: underline; }
+
+  /* === WINDOW SYSTEM === */
+  .win {
+    position: absolute;
+    display: none;
+    flex-direction: column;
+    background: var(--bg-win);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    z-index: 10;
+    overflow: hidden;
+    outline: none;
+    min-width: 280px;
+    min-height: 200px;
+  }
+
+  .win:focus-within {
+    z-index: 110;
+  }
+
+  .win-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 10px;
+    background: var(--bg-win-head);
+    color: var(--fg-head);
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+    font-size: 12px;
+  }
+
+  .win:focus-within .win-head {
+    background: var(--bg-win-head-active);
+  }
+
+  .win-title {
+    flex: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .win-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .win-btn {
+    display: inline-grid;
+    place-items: center;
+    width: 22px;
+    height: 20px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(0,0,0,0.2);
+    color: var(--fg-head);
+    font-size: 11px;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .win-btn:hover { background: rgba(255,255,255,0.2); }
+  .win-btn.close:hover { background: var(--err); color: #fff; }
+
+  .win-body {
+    flex: 1;
+    padding: 12px;
+    overflow: auto;
+    user-select: text;
+  }
+
+  /* Open/Close & Focus rules for each window */
+  #open-terminal:checked ~ .desktop #win-terminal { display: flex; }
+  #open-files:checked ~ .desktop #win-files { display: flex; }
+  #open-paint:checked ~ .desktop #win-paint { display: flex; }
+  #open-calc:checked ~ .desktop #win-calc { display: flex; }
+  #open-game:checked ~ .desktop #win-game { display: flex; }
+  #open-settings:checked ~ .desktop #win-settings { display: flex; }
+  #open-drivers:checked ~ .desktop #win-drivers { display: flex; }
+  #open-viewer:checked ~ .desktop #win-viewer,
+  .os-root:has(.viewer-doc:target) #win-viewer { display: flex; }
+
+  #focus-terminal:checked ~ .desktop #win-terminal,
+  #focus-files:checked ~ .desktop #win-files,
+  #focus-paint:checked ~ .desktop #win-paint,
+  #focus-calc:checked ~ .desktop #win-calc,
+  #focus-game:checked ~ .desktop #win-game,
+  #focus-settings:checked ~ .desktop #win-settings,
+  #focus-drivers:checked ~ .desktop #win-drivers,
+  #focus-viewer:checked ~ .desktop #win-viewer {
+    z-index: 100;
+  }
+
+  #focus-terminal:checked ~ .desktop #win-terminal .win-head,
+  #focus-files:checked ~ .desktop #win-files .win-head,
+  #focus-paint:checked ~ .desktop #win-paint .win-head,
+  #focus-calc:checked ~ .desktop #win-calc .win-head,
+  #focus-game:checked ~ .desktop #win-game .win-head,
+  #focus-settings:checked ~ .desktop #win-settings .win-head,
+  #focus-drivers:checked ~ .desktop #win-drivers .win-head,
+  #focus-viewer:checked ~ .desktop #win-viewer .win-head {
+    background: var(--bg-win-head-active);
+  }
+
+  /* Default Window Positions */
+  #win-terminal { left: 118px; top: 20px; width: 500px; height: 370px; }
+  #win-files    { left: 155px; top: 55px; width: 390px; height: 350px; }
+  #win-viewer   { left: 560px; top: 45px; width: 420px; height: 360px; }
+  #win-paint    { left: 210px; top: 36px; width: 430px; height: 420px; }
+  #win-calc     { left: 640px; top: 30px; width: 340px; height: 380px; }
+  #win-game     { left: 260px; top: 68px; width: 360px; height: 400px; }
+  #win-settings { left: 320px; top: 84px; width: 380px; height: 320px; }
+  #win-drivers  { left: 190px; top: 48px; width: 520px; height: 390px; }
+
+  /* Window Snap Presets */
+  .os-root:has(#snap-terminal-left:checked) #win-terminal,
+  .os-root:has(#snap-files-left:checked) #win-files,
+  .os-root:has(#snap-viewer-left:checked) #win-viewer,
+  .os-root:has(#snap-paint-left:checked) #win-paint,
+  .os-root:has(#snap-calc-left:checked) #win-calc,
+  .os-root:has(#snap-game-left:checked) #win-game,
+  .os-root:has(#snap-settings-left:checked) #win-settings,
+  .os-root:has(#snap-drivers-left:checked) #win-drivers {
+    left: 10px; top: 10px; width: calc(50% - 14px); height: calc(100% - 20px);
+  }
+
+  .os-root:has(#snap-terminal-right:checked) #win-terminal,
+  .os-root:has(#snap-files-right:checked) #win-files,
+  .os-root:has(#snap-viewer-right:checked) #win-viewer,
+  .os-root:has(#snap-paint-right:checked) #win-paint,
+  .os-root:has(#snap-calc-right:checked) #win-calc,
+  .os-root:has(#snap-game-right:checked) #win-game,
+  .os-root:has(#snap-settings-right:checked) #win-settings,
+  .os-root:has(#snap-drivers-right:checked) #win-drivers {
+    left: calc(50% + 4px); top: 10px; width: calc(50% - 14px); height: calc(100% - 20px);
+  }
+
+  .os-root:has(#snap-terminal-max:checked) #win-terminal,
+  .os-root:has(#snap-files-max:checked) #win-files,
+  .os-root:has(#snap-viewer-max:checked) #win-viewer,
+  .os-root:has(#snap-paint-max:checked) #win-paint,
+  .os-root:has(#snap-calc-max:checked) #win-calc,
+  .os-root:has(#snap-game-max:checked) #win-game,
+  .os-root:has(#snap-settings-max:checked) #win-settings,
+  .os-root:has(#snap-drivers-max:checked) #win-drivers {
+    left: 8px; top: 8px; width: calc(100% - 16px); height: calc(100% - 16px);
+  }
+
+  /* === TASKBAR & START MENU === */
+  .taskbar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 44px;
+    background: var(--bg-taskbar);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    z-index: 500;
+    gap: 8px;
+  }
+
+  .tb-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow-x: auto;
+  }
+
+  .start-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--accent);
+    color: #020617;
+    font-weight: 700;
+    border-radius: var(--radius);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .tb-app {
+    display: none;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    background: var(--bg-surface);
+    color: var(--fg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .tb-app:hover { border-color: var(--accent); }
+
+  #open-terminal:checked ~ .taskbar .tb-terminal { display: inline-flex; }
+  #open-files:checked ~ .taskbar .tb-files { display: inline-flex; }
+  #open-paint:checked ~ .taskbar .tb-paint { display: inline-flex; }
+  #open-calc:checked ~ .taskbar .tb-calc { display: inline-flex; }
+  #open-game:checked ~ .taskbar .tb-game { display: inline-flex; }
+  #open-settings:checked ~ .taskbar .tb-settings { display: inline-flex; }
+  #open-drivers:checked ~ .taskbar .tb-drivers { display: inline-flex; }
+  #open-viewer:checked ~ .taskbar .tb-viewer,
+  .os-root:has(.viewer-doc:target) .taskbar .tb-viewer { display: inline-flex; }
+
+  #focus-terminal:checked ~ .taskbar .tb-terminal,
+  #focus-files:checked ~ .taskbar .tb-files,
+  #focus-paint:checked ~ .taskbar .tb-paint,
+  #focus-calc:checked ~ .taskbar .tb-calc,
+  #focus-game:checked ~ .taskbar .tb-game,
+  #focus-settings:checked ~ .taskbar .tb-settings,
+  #focus-drivers:checked ~ .taskbar .tb-drivers,
+  #focus-viewer:checked ~ .taskbar .tb-viewer {
+    border-color: var(--accent);
+    box-shadow: inset 0 -2px 0 var(--accent);
+  }
+
+  .tb-clock {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 4px 10px;
+    background: var(--bg-inset);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    flex-shrink: 0;
+  }
+
+  .uptime-hms::after {
+    counter-reset: h var(--up-h) m var(--up-m) s var(--up-s);
+    content: counter(h, decimal-leading-zero) ":" counter(m, decimal-leading-zero) ":" counter(s, decimal-leading-zero);
+  }
+
+  .uptime-ternary {
+    color: var(--accent);
+    font-size: 11px;
+  }
+  .uptime-ternary::after {
+    counter-reset:
+      t9 var(--bt9) t8 var(--bt8) t7 var(--bt7) t6 var(--bt6) t5 var(--bt5)
+      t4 var(--bt4) t3 var(--bt3) t2 var(--bt2) t1 var(--bt1) t0 var(--bt0);
+    content:
+      "3T:" counter(t9, btrit) counter(t8, btrit) counter(t7, btrit) counter(t6, btrit) counter(t5, btrit)
+      counter(t4, btrit) counter(t3, btrit) counter(t2, btrit) counter(t1, btrit) counter(t0, btrit);
+  }
+
+  .start-menu {
+    position: fixed;
+    left: 10px;
+    bottom: 50px;
+    width: 250px;
+    background: var(--bg-win);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 10px;
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 600;
+  }
+  #start-menu-open:checked ~ .start-menu { display: flex; }
+  .start-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--fg);
+  }
+  .start-item:hover { background: var(--bg-surface); color: var(--accent); }
+  .start-note {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid var(--border);
+    font-size: 10px;
+    color: var(--fg-muted);
+    line-height: 1.35;
+  }
+
+  /* === APP 1: TERMINAL / SHELL === */
+  .term-wrap {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--bg-inset);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    gap: 8px;
+  }
+
+  .term-banner { color: var(--fg-muted); font-size: 11px; }
+
+  .term-prompt-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+  }
+
+  .term-ps1 { color: var(--ok); font-weight: 700; }
+
+  .term-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--fg);
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  .term-status {
+    font-size: 11px;
+    padding: 3px 6px;
+    border-radius: 4px;
+    display: none;
+  }
+
+  .term-input:valid ~ .term-status-ok {
+    display: block;
+    color: var(--ok);
+    background: rgba(34, 197, 94, 0.12);
+  }
+
+  .term-input:invalid:not(:placeholder-shown) ~ .term-status-err {
+    display: block;
+    color: var(--err);
+    background: rgba(239, 68, 68, 0.12);
+  }
+
+  .term-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .term-chip {
+    padding: 3px 7px;
+    font-size: 11px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg-surface);
+    color: var(--fg);
+    cursor: pointer;
+  }
+  .term-chip:hover { border-color: var(--accent); color: var(--accent); }
+
+  .term-out {
+    flex: 1;
+    overflow: auto;
+    white-space: pre-wrap;
+    line-height: 1.45;
+    padding: 6px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 4px;
+  }
+
+  .cmd-panel { display: none; }
+  #cmd-help:checked ~ .term-out .out-help { display: block; }
+  #cmd-ls:checked ~ .term-out .out-ls { display: block; }
+  #cmd-cat:checked ~ .term-out .out-cat { display: block; }
+  #cmd-whoami:checked ~ .term-out .out-whoami { display: block; }
+  #cmd-date:checked ~ .term-out .out-date { display: block; }
+  #cmd-uptime:checked ~ .term-out .out-uptime { display: block; }
+  #cmd-clear:checked ~ .term-out .out-clear { display: block; }
+  #cmd-toast:checked ~ .term-out .out-toast { display: block; }
+
+  #cmd-help:checked ~ .term-chips label[for="cmd-help"],
+  #cmd-ls:checked ~ .term-chips label[for="cmd-ls"],
+  #cmd-cat:checked ~ .term-chips label[for="cmd-cat"],
+  #cmd-whoami:checked ~ .term-chips label[for="cmd-whoami"],
+  #cmd-date:checked ~ .term-chips label[for="cmd-date"],
+  #cmd-uptime:checked ~ .term-chips label[for="cmd-uptime"],
+  #cmd-clear:checked ~ .term-chips label[for="cmd-clear"],
+  #cmd-toast:checked ~ .term-chips label[for="cmd-toast"] {
+    background: var(--accent);
+    color: #020617;
+    font-weight: 700;
+  }
+
+  /* === APP 2: FILESYSTEM & FILE VIEWER === */
+  .fs-tree details {
+    margin-left: 14px;
+    margin-top: 4px;
+  }
+  .fs-tree > details { margin-left: 0; }
+  .fs-tree summary {
+    cursor: pointer;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  .fs-tree summary:hover { background: var(--bg-surface); }
+  .fs-file {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 18px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .fs-file:hover { background: var(--bg-surface); text-decoration: underline; }
+
+  .viewer-doc { display: none; }
+  .viewer-doc:target { display: block; }
+  .viewer-empty { color: var(--fg-muted); }
+  .os-root:has(.viewer-doc:target) .viewer-empty { display: none; }
+
+  .viewer-pre {
+    background: var(--bg-inset);
+    border: 1px solid var(--border);
+    padding: 10px;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    white-space: pre-wrap;
+    line-height: 1.45;
+  }
+
+  /* Pure CSS Drawn Art inside File Viewer */
+  .css-sunset {
+    position: relative;
+    width: 100%;
+    height: 210px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: linear-gradient(180deg, #0f172a 0%, #7c2d12 48%, #f97316 74%, #fde047 100%);
+  }
+  .css-sunset-sun {
+    position: absolute;
+    left: 50%;
+    bottom: 58px;
+    transform: translateX(-50%);
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fef08a 0%, #f97316 75%, #ea580c 100%);
+    box-shadow: 0 0 36px #fb923c;
+  }
+  .css-sunset-sea {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 68px;
+    background: repeating-linear-gradient(
+      180deg,
+      #1e3a8a 0px,
+      #1e3a8a 6px,
+      #2563eb 6px,
+      #f59e0b 8px,
+      #1d4ed8 10px
+    );
+  }
+  .css-sunset-mtn {
+    position: absolute;
+    bottom: 68px;
+    left: -20px;
+    width: 0; height: 0;
+    border-left: 120px solid transparent;
+    border-right: 120px solid transparent;
+    border-bottom: 65px solid #1e1b4b;
+  }
+  .css-sunset-mtn.right {
+    left: auto;
+    right: -30px;
+    border-bottom-color: #312e81;
+  }
+
+  /* === APP 3: PAINT === */
+  .paint-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .swatch {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    cursor: pointer;
+    display: inline-block;
+  }
+  .sw-cyan { background: #38bdf8; }
+  .sw-pink { background: #f472b6; }
+  .sw-lime { background: #4ade80; }
+  .sw-amber { background: #fbbf24; }
+  .sw-white { background: #f8fafc; }
+
+  .paint-form {
+    --ink: #38bdf8;
+    --px-radius: 2px;
+  }
+  .paint-form:has(#ink-pink:checked) { --ink: #f472b6; }
+  .paint-form:has(#ink-lime:checked) { --ink: #4ade80; }
+  .paint-form:has(#ink-amber:checked) { --ink: #fbbf24; }
+  .paint-form:has(#ink-white:checked) { --ink: #f8fafc; }
+  .paint-form:has(#brush-round:checked) { --px-radius: 50%; }
+
+  #ink-cyan:checked ~ .paint-toolbar label[for="ink-cyan"],
+  #ink-pink:checked ~ .paint-toolbar label[for="ink-pink"],
+  #ink-lime:checked ~ .paint-toolbar label[for="ink-lime"],
+  #ink-amber:checked ~ .paint-toolbar label[for="ink-amber"],
+  #ink-white:checked ~ .paint-toolbar label[for="ink-white"] {
+    outline: 2px solid var(--fg);
+    outline-offset: 2px;
+  }
+
+  .paint-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 2px;
+    background: var(--bg-inset);
+    padding: 6px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    max-width: 310px;
+  }
+
+  .px {
+    appearance: none;
+    margin: 0;
+    width: 100%;
+    aspect-ratio: 1;
+    background: var(--bg-surface);
+    border-radius: var(--px-radius);
+    cursor: crosshair;
+  }
+  .px:checked {
+    background: var(--ink);
+  }
+
+  .btn-ui {
+    padding: 4px 10px;
+    background: var(--bg-surface);
+    color: var(--fg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+  }
+  .btn-ui:hover { border-color: var(--accent); }
+
+  /* === APP 4: CALCULATOR === */
+  .calc-box {
+    --a: 6;
+    --b: 7;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .calc-box:has(#ca-0:checked) { --a: 0; }
+  .calc-box:has(#ca-1:checked) { --a: 1; }
+  .calc-box:has(#ca-2:checked) { --a: 2; }
+  .calc-box:has(#ca-3:checked) { --a: 3; }
+  .calc-box:has(#ca-4:checked) { --a: 4; }
+  .calc-box:has(#ca-5:checked) { --a: 5; }
+  .calc-box:has(#ca-6:checked) { --a: 6; }
+  .calc-box:has(#ca-7:checked) { --a: 7; }
+  .calc-box:has(#ca-8:checked) { --a: 8; }
+  .calc-box:has(#ca-9:checked) { --a: 9; }
+
+  .calc-box:has(#cb-0:checked) { --b: 0; }
+  .calc-box:has(#cb-1:checked) { --b: 1; }
+  .calc-box:has(#cb-2:checked) { --b: 2; }
+  .calc-box:has(#cb-3:checked) { --b: 3; }
+  .calc-box:has(#cb-4:checked) { --b: 4; }
+  .calc-box:has(#cb-5:checked) { --b: 5; }
+  .calc-box:has(#cb-6:checked) { --b: 6; }
+  .calc-box:has(#cb-7:checked) { --b: 7; }
+  .calc-box:has(#cb-8:checked) { --b: 8; }
+  .calc-box:has(#cb-9:checked) { --b: 9; }
+
+  .calc-display {
+    background: var(--bg-inset);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 20px;
+    text-align: right;
+    min-height: 52px;
+  }
+
+  .calc-res { display: none; }
+  #cop-add:checked ~ .calc-display .res-add,
+  #cop-sub:checked ~ .calc-display .res-sub,
+  #cop-mul:checked ~ .calc-display .res-mul,
+  #cop-div:checked ~ .calc-display .res-div { display: inline; }
+
+  .res-add::after {
+    --r: calc(var(--a) + var(--b));
+    counter-reset: a var(--a) b var(--b) r var(--r);
+    content: counter(a) " + " counter(b) " = " counter(r);
+  }
+  .res-sub::after {
+    --r: calc(var(--a) - var(--b));
+    counter-reset: a var(--a) b var(--b) r var(--r);
+    content: counter(a) " − " counter(b) " = " counter(r);
+  }
+  .res-mul::after {
+    --r: calc(var(--a) * var(--b));
+    counter-reset: a var(--a) b var(--b) r var(--r);
+    content: counter(a) " × " counter(b) " = " counter(r);
+  }
+  .res-div::after {
+    --q: round(down, var(--a) / max(1, var(--b)));
+    --f: calc(round(down, (var(--a) * 100) / max(1, var(--b))) - var(--q) * 100);
+    counter-reset: a var(--a) b var(--b) q var(--q) f var(--f);
+    content: counter(a) " ÷ " counter(b) " = " counter(q) "." counter(f, decimal-leading-zero);
+  }
+  .calc-box:has(#cb-0:checked):has(#cop-div:checked) .res-div::after {
+    content: "ERR: DIV / 0";
+    color: var(--err);
+  }
+
+  .calc-row-label { font-size: 11px; color: var(--fg-muted); margin-bottom: 3px; }
+  .calc-keys {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+  }
+  .calc-ops {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+  }
+  .ckey {
+    display: grid;
+    place-items: center;
+    padding: 6px 0;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-weight: 600;
+  }
+  .ckey:hover { border-color: var(--accent); }
+
+  #ca-0:checked ~ .calc-group label[for="ca-0"],
+  #ca-1:checked ~ .calc-group label[for="ca-1"],
+  #ca-2:checked ~ .calc-group label[for="ca-2"],
+  #ca-3:checked ~ .calc-group label[for="ca-3"],
+  #ca-4:checked ~ .calc-group label[for="ca-4"],
+  #ca-5:checked ~ .calc-group label[for="ca-5"],
+  #ca-6:checked ~ .calc-group label[for="ca-6"],
+  #ca-7:checked ~ .calc-group label[for="ca-7"],
+  #ca-8:checked ~ .calc-group label[for="ca-8"],
+  #ca-9:checked ~ .calc-group label[for="ca-9"],
+  #cb-0:checked ~ .calc-group label[for="cb-0"],
+  #cb-1:checked ~ .calc-group label[for="cb-1"],
+  #cb-2:checked ~ .calc-group label[for="cb-2"],
+  #cb-3:checked ~ .calc-group label[for="cb-3"],
+  #cb-4:checked ~ .calc-group label[for="cb-4"],
+  #cb-5:checked ~ .calc-group label[for="cb-5"],
+  #cb-6:checked ~ .calc-group label[for="cb-6"],
+  #cb-7:checked ~ .calc-group label[for="cb-7"],
+  #cb-8:checked ~ .calc-group label[for="cb-8"],
+  #cb-9:checked ~ .calc-group label[for="cb-9"],
+  #cop-add:checked ~ .calc-group label[for="cop-add"],
+  #cop-sub:checked ~ .calc-group label[for="cop-sub"],
+  #cop-mul:checked ~ .calc-group label[for="cop-mul"],
+  #cop-div:checked ~ .calc-group label[for="cop-div"] {
+    background: var(--accent);
+    color: #020617;
+  }
+
+  /* === APP 5: LIGHTS OUT (3x3 GF(2) PUZZLE + :has() WIN DETECTION) === */
+  .lights-form {
+    --m1: 0; --m2: 0; --m3: 0;
+    --m4: 0; --m5: 0; --m6: 0;
+    --m7: 0; --m8: 0; --m9: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .lights-form:has(#lo-1:checked) { --m1: 1; }
+  .lights-form:has(#lo-2:checked) { --m2: 1; }
+  .lights-form:has(#lo-3:checked) { --m3: 1; }
+  .lights-form:has(#lo-4:checked) { --m4: 1; }
+  .lights-form:has(#lo-5:checked) { --m5: 1; }
+  .lights-form:has(#lo-6:checked) { --m6: 1; }
+  .lights-form:has(#lo-7:checked) { --m7: 1; }
+  .lights-form:has(#lo-8:checked) { --m8: 1; }
+  .lights-form:has(#lo-9:checked) { --m9: 1; }
+
+  .lights-grid {
+    /* Initial pattern [1,1,1, 0,0,0, 1,0,1] -> unique solution {1,3,5,8} */
+    --l1: mod(calc(1 + var(--m1) + var(--m2) + var(--m4)), 2);
+    --l2: mod(calc(1 + var(--m1) + var(--m2) + var(--m3) + var(--m5)), 2);
+    --l3: mod(calc(1 + var(--m2) + var(--m3) + var(--m6)), 2);
+    --l4: mod(calc(0 + var(--m1) + var(--m4) + var(--m5) + var(--m7)), 2);
+    --l5: mod(calc(0 + var(--m2) + var(--m4) + var(--m5) + var(--m6) + var(--m8)), 2);
+    --l6: mod(calc(0 + var(--m3) + var(--m5) + var(--m6) + var(--m9)), 2);
+    --l7: mod(calc(1 + var(--m4) + var(--m7) + var(--m8)), 2);
+    --l8: mod(calc(0 + var(--m5) + var(--m7) + var(--m8) + var(--m9)), 2);
+    --l9: mod(calc(1 + var(--m6) + var(--m8) + var(--m9)), 2);
+
+    display: grid;
+    grid-template-columns: repeat(3, 66px);
+    gap: 8px;
+    padding: 10px;
+    background: var(--bg-inset);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .lo-cell {
+    width: 66px;
+    height: 66px;
+    border-radius: 8px;
+    border: 2px solid var(--border);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    font-size: 11px;
+    transition: transform 0.08s ease;
+  }
+  .lo-cell:active { transform: scale(0.95); }
+
+  .lo-c1 { background: rgb(calc(28 + var(--l1) * 215) calc(34 + var(--l1) * 165) calc(48 - var(--l1) * 20)); color: #0f172a; }
+  .lo-c2 { background: rgb(calc(28 + var(--l2) * 215) calc(34 + var(--l2) * 165) calc(48 - var(--l2) * 20)); color: #0f172a; }
+  .lo-c3 { background: rgb(calc(28 + var(--l3) * 215) calc(34 + var(--l3) * 165) calc(48 - var(--l3) * 20)); color: #0f172a; }
+  .lo-c4 { background: rgb(calc(28 + var(--l4) * 215) calc(34 + var(--l4) * 165) calc(48 - var(--l4) * 20)); color: #0f172a; }
+  .lo-c5 { background: rgb(calc(28 + var(--l5) * 215) calc(34 + var(--l5) * 165) calc(48 - var(--l5) * 20)); color: #0f172a; }
+  .lo-c6 { background: rgb(calc(28 + var(--l6) * 215) calc(34 + var(--l6) * 165) calc(48 - var(--l6) * 20)); color: #0f172a; }
+  .lo-c7 { background: rgb(calc(28 + var(--l7) * 215) calc(34 + var(--l7) * 165) calc(48 - var(--l7) * 20)); color: #0f172a; }
+  .lo-c8 { background: rgb(calc(28 + var(--l8) * 215) calc(34 + var(--l8) * 165) calc(48 - var(--l8) * 20)); color: #0f172a; }
+  .lo-c9 { background: rgb(calc(28 + var(--l9) * 215) calc(34 + var(--l9) * 165) calc(48 - var(--l9) * 20)); color: #0f172a; }
+
+  .lights-win {
+    display: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    background: rgba(34, 197, 94, 0.16);
+    border: 1px solid var(--ok);
+    color: var(--ok);
+    font-weight: 700;
+  }
+
+  .lights-form:has(#lo-1:checked):has(#lo-2:not(:checked)):has(#lo-3:checked):has(#lo-4:not(:checked)):has(#lo-5:checked):has(#lo-6:not(:checked)):has(#lo-7:not(:checked)):has(#lo-8:checked):has(#lo-9:not(:checked)) .lights-win {
+    display: block;
+  }
+
+  /* === APP 6: SETTINGS === */
+  .theme-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .theme-card {
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-surface);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .theme-card:hover { border-color: var(--accent); }
+  .os-root:has(#theme-nord:checked) label[for="theme-nord"],
+  .os-root:has(#theme-amber:checked) label[for="theme-amber"],
+  .os-root:has(#theme-classic:checked) label[for="theme-classic"],
+  .os-root:has(#theme-vapor:checked) label[for="theme-vapor"] {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+
+  /* === APP 7: DRIVERS / SYSTEM INFO === */
+  .drv-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .drv-table th, .drv-table td {
+    text-align: left;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .drv-table th { color: var(--accent); }
+  .badge-ok {
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(34, 197, 94, 0.15);
+    color: var(--ok);
+    font-family: var(--font-mono);
+    font-size: 10px;
+  }
+  .badge-off {
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--err);
+    font-family: var(--font-mono);
+    font-size: 10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="os-root" id="desktop">
+  <!-- GLOBAL STATE: BOOT, START MENU, THEMES, WINDOW OPEN/FOCUS/SNAP -->
+  <input type="checkbox" id="skip-boot" class="state-ctrl">
+  <input type="checkbox" id="start-menu-open" class="state-ctrl">
+
+  <input type="radio" name="os-theme" id="theme-nord" class="state-ctrl" checked>
+  <input type="radio" name="os-theme" id="theme-amber" class="state-ctrl">
+  <input type="radio" name="os-theme" id="theme-classic" class="state-ctrl">
+  <input type="radio" name="os-theme" id="theme-vapor" class="state-ctrl">
+
+  <!-- Open/Close Checkboxes -->
+  <input type="checkbox" id="open-terminal" class="state-ctrl" checked>
+  <input type="checkbox" id="open-files" class="state-ctrl" checked>
+  <input type="checkbox" id="open-viewer" class="state-ctrl">
+  <input type="checkbox" id="open-paint" class="state-ctrl">
+  <input type="checkbox" id="open-calc" class="state-ctrl">
+  <input type="checkbox" id="open-game" class="state-ctrl">
+  <input type="checkbox" id="open-settings" class="state-ctrl">
+  <input type="checkbox" id="open-drivers" class="state-ctrl">
+
+  <!-- Focus Radios -->
+  <input type="radio" name="win-focus" id="focus-terminal" class="state-ctrl" checked>
+  <input type="radio" name="win-focus" id="focus-files" class="state-ctrl">
+  <input type="radio" name="win-focus" id="focus-viewer" class="state-ctrl">
+  <input type="radio" name="win-focus" id="focus-paint" class="state-ctrl">
+  <input type="radio" name="win-focus" id="focus-calc" class="state-ctrl">
+  <input type="radio" name="win-focus" id="focus-game" class="state-ctrl">
+  <input type="radio" name="win-focus" id="focus-settings" class="state-ctrl">
+  <input type="radio" name="win-focus" id="focus-drivers" class="state-ctrl">
+
+  <!-- Snap Radios per Window -->
+  <input type="radio" name="snap-terminal" id="snap-terminal-def" class="state-ctrl" checked>
+  <input type="radio" name="snap-terminal" id="snap-terminal-left" class="state-ctrl">
+  <input type="radio" name="snap-terminal" id="snap-terminal-right" class="state-ctrl">
+  <input type="radio" name="snap-terminal" id="snap-terminal-max" class="state-ctrl">
+
+  <input type="radio" name="snap-files" id="snap-files-def" class="state-ctrl" checked>
+  <input type="radio" name="snap-files" id="snap-files-left" class="state-ctrl">
+  <input type="radio" name="snap-files" id="snap-files-right" class="state-ctrl">
+  <input type="radio" name="snap-files" id="snap-files-max" class="state-ctrl">
+
+  <input type="radio" name="snap-viewer" id="snap-viewer-def" class="state-ctrl" checked>
+  <input type="radio" name="snap-viewer" id="snap-viewer-left" class="state-ctrl">
+  <input type="radio" name="snap-viewer" id="snap-viewer-right" class="state-ctrl">
+  <input type="radio" name="snap-viewer" id="snap-viewer-max" class="state-ctrl">
+
+  <input type="radio" name="snap-paint" id="snap-paint-def" class="state-ctrl" checked>
+  <input type="radio" name="snap-paint" id="snap-paint-left" class="state-ctrl">
+  <input type="radio" name="snap-paint" id="snap-paint-right" class="state-ctrl">
+  <input type="radio" name="snap-paint" id="snap-paint-max" class="state-ctrl">
+
+  <input type="radio" name="snap-calc" id="snap-calc-def" class="state-ctrl" checked>
+  <input type="radio" name="snap-calc" id="snap-calc-left" class="state-ctrl">
+  <input type="radio" name="snap-calc" id="snap-calc-right" class="state-ctrl">
+  <input type="radio" name="snap-calc" id="snap-calc-max" class="state-ctrl">
+
+  <input type="radio" name="snap-game" id="snap-game-def" class="state-ctrl" checked>
+  <input type="radio" name="snap-game" id="snap-game-left" class="state-ctrl">
+  <input type="radio" name="snap-game" id="snap-game-right" class="state-ctrl">
+  <input type="radio" name="snap-game" id="snap-game-max" class="state-ctrl">
+
+  <input type="radio" name="snap-settings" id="snap-settings-def" class="state-ctrl" checked>
+  <input type="radio" name="snap-settings" id="snap-settings-left" class="state-ctrl">
+  <input type="radio" name="snap-settings" id="snap-settings-right" class="state-ctrl">
+  <input type="radio" name="snap-settings" id="snap-settings-max" class="state-ctrl">
+
+  <input type="radio" name="snap-drivers" id="snap-drivers-def" class="state-ctrl" checked>
+  <input type="radio" name="snap-drivers" id="snap-drivers-left" class="state-ctrl">
+  <input type="radio" name="snap-drivers" id="snap-drivers-right" class="state-ctrl">
+  <input type="radio" name="snap-drivers" id="snap-drivers-max" class="state-ctrl">
+
+  <!-- === 1. BOOT SCREEN === -->
+  <div class="boot-screen" role="status" aria-label="CSSOS Boot Sequence">
+    <div class="boot-box">
+<pre class="boot-logo">  ____ ____ ____   ___  ____
+ / ___/ ___/ ___| / _ \/ ___|
+| |   \___ \___ \| | | \___ \
+| |___ ___) |__) | |_| |___) |
+ \____|____/____/ \___/|____/  v1.0 (0-JS)</pre>
+      <div class="boot-line">[POST] ConsciousNode SoftWorks BIOS rev 0xCSS — OK</div>
+      <div class="boot-line">[MEM ] Volatile DOM State Bus (0 bytes persisted) — OK</div>
+      <div class="boot-line">[DRV ] Display: Cascade | Mouse: :hover/:active | Kbd: :focus — OK</div>
+      <div class="boot-line">[CLK ] @property --up-sec + Balanced Ternary ALU — OK</div>
+      <div class="boot-line">[VFS ] Mounting &lt;details&gt; tree &amp; :target File Viewer — OK</div>
+      <div class="boot-line">[INIT] Handing control to Desktop Compositor...</div>
+      <div class="boot-progress-wrap"><div class="boot-progress-bar"></div></div>
+      <label for="skip-boot" class="skip-boot-btn">Skip POST</label>
+    </div>
+  </div>
+
+  <!-- === 2. DESKTOP === -->
+  <main class="desktop">
+    <nav class="desktop-icons" aria-label="Desktop Applications">
+      <label for="open-terminal" class="d-icon"><div class="d-icon-glyph">&gt;_</div><span>Terminal</span></label>
+      <label for="open-files" class="d-icon"><div class="d-icon-glyph">📁</div><span>Files</span></label>
+      <label for="open-paint" class="d-icon"><div class="d-icon-glyph">🎨</div><span>Paint</span></label>
+      <label for="open-calc" class="d-icon"><div class="d-icon-glyph">🧮</div><span>Calculator</span></label>
+      <label for="open-game" class="d-icon"><div class="d-icon-glyph">💡</div><span>Lights Out</span></label>
+      <label for="open-settings" class="d-icon"><div class="d-icon-glyph">⚙️</div><span>Settings</span></label>
+      <label for="open-drivers" class="d-icon"><div class="d-icon-glyph">🔌</div><span>Drivers</span></label>
+    </nav>
+
+    <!-- WINDOW 1: TERMINAL -->
+    <section id="win-terminal" class="win" tabindex="0" aria-label="Terminal">
+      <header class="win-head">
+        <label for="focus-terminal" class="win-title">&gt;_ CSSOS Shell (cssh)</label>
+        <div class="win-controls">
+          <label for="snap-terminal-left" class="win-btn" title="Snap Left">◧</label>
+          <label for="snap-terminal-right" class="win-btn" title="Snap Right">◨</label>
+          <label for="snap-terminal-max" class="win-btn" title="Maximize">□</label>
+          <label for="snap-terminal-def" class="win-btn" title="Restore">❐</label>
+          <label for="open-terminal" class="win-btn close" title="Close">✕</label>
+        </div>
+      </header>
+      <div class="win-body">
+        <div class="term-wrap">
+          <input type="radio" name="term-cmd" id="cmd-help" class="state-ctrl" checked>
+          <input type="radio" name="term-cmd" id="cmd-ls" class="state-ctrl">
+          <input type="radio" name="term-cmd" id="cmd-cat" class="state-ctrl">
+          <input type="radio" name="term-cmd" id="cmd-whoami" class="state-ctrl">
+          <input type="radio" name="term-cmd" id="cmd-date" class="state-ctrl">
+          <input type="radio" name="term-cmd" id="cmd-uptime" class="state-ctrl">
+          <input type="radio" name="term-cmd" id="cmd-clear" class="state-ctrl">
+          <input type="radio" name="term-cmd" id="cmd-toast" class="state-ctrl">
+
+          <div class="term-banner">ConsciousNode cssh — Type a command to validate via :valid, or click a command below to view output.</div>
+          <div class="term-prompt-row">
+            <span class="term-ps1">guest@cssos:~$</span>
+            <input type="text" class="term-input" required placeholder="help | ls | cat readme | whoami | date | uptime | clear | toast" pattern="help|ls|cat readme|whoami|date|uptime|clear|toast" aria-label="Terminal Command Input">
+            <span class="term-status term-status-ok">✓ recognized</span>
+            <span class="term-status term-status-err">cssh: command not found</span>
+          </div>
+
+          <div class="term-chips">
+            <label for="cmd-help" class="term-chip">help</label>
+            <label for="cmd-ls" class="term-chip">ls</label>
+            <label for="cmd-cat" class="term-chip">cat readme</label>
+            <label for="cmd-whoami" class="term-chip">whoami</label>
+            <label for="cmd-date" class="term-chip">date</label>
+            <label for="cmd-uptime" class="term-chip">uptime</label>
+            <label for="cmd-clear" class="term-chip">clear</label>
+            <label for="cmd-toast" class="term-chip">toast</label>
+          </div>
+
+          <div class="term-out">
+            <div class="cmd-panel out-help">Available commands (8):
+  help         Show this command reference
+  ls           List /home/consciousnode directory
+  cat readme   Print README.md summary
+  whoami       Print current user &amp; session privilege
+  date         Show wall-clock availability notice
+  uptime       Show live CSS uptime &amp; balanced ternary
+  clear        Clear terminal output buffer
+  toast        [secret] Invoke sibling OS greeting</div>
+            <div class="cmd-panel out-ls">drwxr-xr-x  README.md
+drwxr-xr-x  manifesto.txt
+drwxr-xr-x  drivers.txt
+drwxr-xr-x  pictures/
+drwxr-xr-x  secrets/</div>
+            <div class="cmd-panel out-cat">=== README.md ===
+CSSOS v1.0 — ConsciousNode SoftWorks goof build.
+100% pure HTML + CSS. Zero JavaScript.
+Nothing survives a page reload except the URL #hash.</div>
+            <div class="cmd-panel out-whoami">guest (uid=1000, groups=css,cascade,no-js)
+Session: Volatile DOM RAM (no persistence)</div>
+            <div class="cmd-panel out-date">Wall-clock RTC unavailable: CSS cannot read system date/time.
+Use 'uptime' for elapsed session time since page load.</div>
+            <div class="cmd-panel out-uptime">Session Uptime: <span class="uptime-hms"></span>
+Balanced Ternary: <span class="uptime-ternary"></span></div>
+            <div class="cmd-panel out-clear"><span style="color:var(--fg-muted)">[output cleared]</span></div>
+            <div class="cmd-panel out-toast">   _________
+  /         \
+ |  TOASTOS  |  &lt;-- Sibling build detected!
+ |  ~~~~~~~  |  "May your cascade be crisp and your butter warm."
+  \_________/</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- WINDOW 2: FILESYSTEM -->
+    <section id="win-files" class="win" tabindex="0" aria-label="Files">
+      <header class="win-head">
+        <label for="focus-files" class="win-title">📁 Files — /home/consciousnode</label>
+        <div class="win-controls">
+          <label for="snap-files-left" class="win-btn" title="Snap Left">◧</label>
+          <label for="snap-files-right" class="win-btn" title="Snap Right">◨</label>
+          <label for="snap-files-max" class="win-btn" title="Maximize">□</label>
+          <label for="snap-files-def" class="win-btn" title="Restore">❐</label>
+          <label for="open-files" class="win-btn close" title="Close">✕</label>
+        </div>
+      </header>
+      <div class="win-body fs-tree">
+        <details open>
+          <summary>📂 /home/consciousnode</summary>
+          <a href="#file-readme" class="fs-file">📄 README.md</a>
+          <a href="#file-manifesto" class="fs-file">📄 manifesto.txt</a>
+          <a href="#file-drivers" class="fs-file">📄 drivers.txt</a>
+          <details open>
+            <summary>📂 pictures/</summary>
+            <a href="#file-sunset" class="fs-file">🖼️ sunset.cssimg</a>
+          </details>
+          <details>
+            <summary>📂 secrets/</summary>
+            <a href="#file-secret" class="fs-file">🔒 .hidden_note.txt</a>
+          </details>
+        </details>
+      </div>
+    </section>
+
+    <!-- WINDOW 3: FILE VIEWER (:target) -->
+    <section id="win-viewer" class="win" tabindex="0" aria-label="File Viewer">
+      <header class="win-head">
+        <label for="focus-viewer" class="win-title">📄 File Viewer (:target)</label>
+        <div class="win-controls">
+          <label for="snap-viewer-left" class="win-btn" title="Snap Left">◧</label>
+          <label for="snap-viewer-right" class="win-btn" title="Snap Right">◨</label>
+          <label for="snap-viewer-max" class="win-btn" title="Maximize">□</label>
+          <label for="snap-viewer-def" class="win-btn" title="Restore">❐</label>
+          <a href="#desktop" class="win-btn close" title="Close">✕</a>
+        </div>
+      </header>
+      <div class="win-body">
+        <p class="viewer-empty">Select a file from the Files window to open it via URL <code>#hash</code> (<code>:target</code>).</p>
+
+        <article id="file-readme" class="viewer-doc">
+          <h3 style="margin-top:0">README.md</h3>
+          <div class="viewer-pre">CSSOS v1.0 — ConsciousNode SoftWorks
+A sibling of ToastOS, built with ZERO JavaScript.
+
+All window state, themes, Paint pixels, Calculator math,
+and Lights Out parity live in HTML form controls + CSS.
+
+Honesty Notice:
+Nothing survives a page reload except the URL #hash!</div>
+        </article>
+
+        <article id="file-manifesto" class="viewer-doc">
+          <h3 style="margin-top:0">manifesto.txt</h3>
+          <div class="viewer-pre">Why build an OS in CSS?
+Because :has(), @property, calc(), mod(), and counters
+turned stylesheets into a reactive declarative runtime.
+
+No emulated CPU here — the cascade IS the kernel.</div>
+        </article>
+
+        <article id="file-drivers" class="viewer-doc">
+          <h3 style="margin-top:0">drivers.txt</h3>
+          <div class="viewer-pre">Mouse Driver    -> :hover, :active, &lt;label&gt;
+Keyboard Driver -> :focus, :focus-within, pattern
+Display Driver  -> CSS Cascade &amp; Custom Properties
+Clock Driver    -> @property --up-sec + steps()</div>
+        </article>
+
+        <article id="file-sunset" class="viewer-doc">
+          <h3 style="margin-top:0">sunset.cssimg (Pure CSS Vector/Gradient Art)</h3>
+          <div class="css-sunset">
+            <div class="css-sunset-sun"></div>
+            <div class="css-sunset-mtn"></div>
+            <div class="css-sunset-mtn right"></div>
+            <div class="css-sunset-sea"></div>
+          </div>
+        </article>
+
+        <article id="file-secret" class="viewer-doc">
+          <h3 style="margin-top:0">.hidden_note.txt</h3>
+          <div class="viewer-pre">Psst: Try typing "toast" in the Terminal,
+or solving Lights Out with tiles 1, 3, 5, 8!</div>
+        </article>
+      </div>
+    </section>
+
+    <!-- WINDOW 4: PAINT -->
+    <section id="win-paint" class="win" tabindex="0" aria-label="Paint">
+      <header class="win-head">
+        <label for="focus-paint" class="win-title">🎨 Paint (12×12 Checkbox Grid)</label>
+        <div class="win-controls">
+          <label for="snap-paint-left" class="win-btn" title="Snap Left">◧</label>
+          <label for="snap-paint-right" class="win-btn" title="Snap Right">◨</label>
+          <label for="snap-paint-max" class="win-btn" title="Maximize">□</label>
+          <label for="snap-paint-def" class="win-btn" title="Restore">❐</label>
+          <label for="open-paint" class="win-btn close" title="Close">✕</label>
+        </div>
+      </header>
+      <div class="win-body">
+        <form class="paint-form">
+          <input type="radio" name="ink" id="ink-cyan" class="state-ctrl" checked>
+          <input type="radio" name="ink" id="ink-pink" class="state-ctrl">
+          <input type="radio" name="ink" id="ink-lime" class="state-ctrl">
+          <input type="radio" name="ink" id="ink-amber" class="state-ctrl">
+          <input type="radio" name="ink" id="ink-white" class="state-ctrl">
+          <input type="checkbox" id="brush-round" class="state-ctrl">
+
+          <div class="paint-toolbar">
+            <label for="ink-cyan" class="swatch sw-cyan" title="Cyan"></label>
+            <label for="ink-pink" class="swatch sw-pink" title="Pink"></label>
+            <label for="ink-lime" class="swatch sw-lime" title="Lime"></label>
+            <label for="ink-amber" class="swatch sw-amber" title="Amber"></label>
+            <label for="ink-white" class="swatch sw-white" title="White"></label>
+            <label for="brush-round" class="btn-ui">Round Pixels</label>
+            <button type="reset" class="btn-ui">Clear</button>
+          </div>
+
+          <div class="paint-grid" aria-label="12 by 12 pixel canvas">
+            <input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px">
+            <input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px">
+            <input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px">
+            <input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px">
+            <input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px">
+            <input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px">
+            <input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px">
+            <input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px">
+            <input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px">
+            <input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px">
+            <input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px">
+            <input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px"><input type="checkbox" class="px">
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- WINDOW 5: CALCULATOR -->
+    <section id="win-calc" class="win" tabindex="0" aria-label="Calculator">
+      <header class="win-head">
+        <label for="focus-calc" class="win-title">🧮 Calculator (calc + counters)</label>
+        <div class="win-controls">
+          <label for="snap-calc-left" class="win-btn" title="Snap Left">◧</label>
+          <label for="snap-calc-right" class="win-btn" title="Snap Right">◨</label>
+          <label for="snap-calc-max" class="win-btn" title="Maximize">□</label>
+          <label for="snap-calc-def" class="win-btn" title="Restore">❐</label>
+          <label for="open-calc" class="win-btn close" title="Close">✕</label>
+        </div>
+      </header>
+      <div class="win-body">
+        <div class="calc-box">
+          <input type="radio" name="ca" id="ca-0" class="state-ctrl">
+          <input type="radio" name="ca" id="ca-1" class="state-ctrl">
+          <input type="radio" name="ca" id="ca-2" class="state-ctrl">
+          <input type="radio" name="ca" id="ca-3" class="state-ctrl">
+          <input type="radio" name="ca" id="ca-4" class="state-ctrl">
+          <input type="radio" name="ca" id="ca-5" class="state-ctrl">
+          <input type="radio" name="ca" id="ca-6" class="state-ctrl" checked>
+          <input type="radio" name="ca" id="ca-7" class="state-ctrl">
+          <input type="radio" name="ca" id="ca-8" class="state-ctrl">
+          <input type="radio" name="ca" id="ca-9" class="state-ctrl">
+
+          <input type="radio" name="cop" id="cop-add" class="state-ctrl">
+          <input type="radio" name="cop" id="cop-sub" class="state-ctrl">
+          <input type="radio" name="cop" id="cop-mul" class="state-ctrl" checked>
+          <input type="radio" name="cop" id="cop-div" class="state-ctrl">
+
+          <input type="radio" name="cb" id="cb-0" class="state-ctrl">
+          <input type="radio" name="cb" id="cb-1" class="state-ctrl">
+          <input type="radio" name="cb" id="cb-2" class="state-ctrl">
+          <input type="radio" name="cb" id="cb-3" class="state-ctrl">
+          <input type="radio" name="cb" id="cb-4" class="state-ctrl">
+          <input type="radio" name="cb" id="cb-5" class="state-ctrl">
+          <input type="radio" name="cb" id="cb-6" class="state-ctrl">
+          <input type="radio" name="cb" id="cb-7" class="state-ctrl" checked>
+          <input type="radio" name="cb" id="cb-8" class="state-ctrl">
+          <input type="radio" name="cb" id="cb-9" class="state-ctrl">
+
+          <div class="calc-display">
+            <span class="calc-res res-add"></span>
+            <span class="calc-res res-sub"></span>
+            <span class="calc-res res-mul"></span>
+            <span class="calc-res res-div"></span>
+          </div>
+
+          <div class="calc-group">
+            <div class="calc-row-label">Operand A</div>
+            <div class="calc-keys">
+              <label for="ca-0" class="ckey">0</label><label for="ca-1" class="ckey">1</label><label for="ca-2" class="ckey">2</label><label for="ca-3" class="ckey">3</label><label for="ca-4" class="ckey">4</label>
+              <label for="ca-5" class="ckey">5</label><label for="ca-6" class="ckey">6</label><label for="ca-7" class="ckey">7</label><label for="ca-8" class="ckey">8</label><label for="ca-9" class="ckey">9</label>
+            </div>
+          </div>
+
+          <div class="calc-group">
+            <div class="calc-row-label">Operator</div>
+            <div class="calc-ops">
+              <label for="cop-add" class="ckey">+</label>
+              <label for="cop-sub" class="ckey">−</label>
+              <label for="cop-mul" class="ckey">×</label>
+              <label for="cop-div" class="ckey">÷</label>
+            </div>
+          </div>
+
+          <div class="calc-group">
+            <div class="calc-row-label">Operand B</div>
+            <div class="calc-keys">
+              <label for="cb-0" class="ckey">0</label><label for="cb-1" class="ckey">1</label><label for="cb-2" class="ckey">2</label><label for="cb-3" class="ckey">3</label><label for="cb-4" class="ckey">4</label>
+              <label for="cb-5" class="ckey">5</label><label for="cb-6" class="ckey">6</label><label for="cb-7" class="ckey">7</label><label for="cb-8" class="ckey">8</label><label for="cb-9" class="ckey">9</label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- WINDOW 6: LIGHTS OUT -->
+    <section id="win-game" class="win" tabindex="0" aria-label="Lights Out">
+      <header class="win-head">
+        <label for="focus-game" class="win-title">💡 Lights Out (3×3 GF(2) CSS)</label>
+        <div class="win-controls">
+          <label for="snap-game-left" class="win-btn" title="Snap Left">◧</label>
+          <label for="snap-game-right" class="win-btn" title="Snap Right">◨</label>
+          <label for="snap-game-max" class="win-btn" title="Maximize">□</label>
+          <label for="snap-game-def" class="win-btn" title="Restore">❐</label>
+          <label for="open-game" class="win-btn close" title="Close">✕</label>
+        </div>
+      </header>
+      <div class="win-body">
+        <form class="lights-form">
+          <input type="checkbox" id="lo-1" class="state-ctrl">
+          <input type="checkbox" id="lo-2" class="state-ctrl">
+          <input type="checkbox" id="lo-3" class="state-ctrl">
+          <input type="checkbox" id="lo-4" class="state-ctrl">
+          <input type="checkbox" id="lo-5" class="state-ctrl">
+          <input type="checkbox" id="lo-6" class="state-ctrl">
+          <input type="checkbox" id="lo-7" class="state-ctrl">
+          <input type="checkbox" id="lo-8" class="state-ctrl">
+          <input type="checkbox" id="lo-9" class="state-ctrl">
+
+          <div style="font-size:12px; color:var(--fg-muted); text-align:center;">
+            Turn all 9 lights OFF. Clicking a tile flips it and its orthogonal neighbors via <code>mod(..., 2)</code>.
+          </div>
+
+          <div class="lights-grid">
+            <label for="lo-1" class="lo-cell lo-c1">1</label>
+            <label for="lo-2" class="lo-cell lo-c2">2</label>
+            <label for="lo-3" class="lo-cell lo-c3">3</label>
+            <label for="lo-4" class="lo-cell lo-c4">4</label>
+            <label for="lo-5" class="lo-cell lo-c5">5</label>
+            <label for="lo-6" class="lo-cell lo-c6">6</label>
+            <label for="lo-7" class="lo-cell lo-c7">7</label>
+            <label for="lo-8" class="lo-cell lo-c8">8</label>
+            <label for="lo-9" class="lo-cell lo-c9">9</label>
+          </div>
+
+          <div class="lights-win">🎉 YOU WIN! All lights extinguished (detected by :has()).</div>
+          <button type="reset" class="btn-ui">Reset Puzzle</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- WINDOW 7: SETTINGS -->
+    <section id="win-settings" class="win" tabindex="0" aria-label="Settings">
+      <header class="win-head">
+        <label for="focus-settings" class="win-title">⚙️ Settings — Themes &amp; State</label>
+        <div class="win-controls">
+          <label for="snap-settings-left" class="win-btn" title="Snap Left">◧</label>
+          <label for="snap-settings-right" class="win-btn" title="Snap Right">◨</label>
+          <label for="snap-settings-max" class="win-btn" title="Maximize">□</label>
+          <label for="snap-settings-def" class="win-btn" title="Restore">❐</label>
+          <label for="open-settings" class="win-btn close" title="Close">✕</label>
+        </div>
+      </header>
+      <div class="win-body">
+        <strong>System Theme (Cascade Override)</strong>
+        <div class="theme-list">
+          <label for="theme-nord" class="theme-card"><strong>Nordic Dark</strong><span style="font-size:11px;color:var(--fg-muted)">Slate &amp; Sky</span></label>
+          <label for="theme-amber" class="theme-card"><strong>CRT Amber</strong><span style="font-size:11px;color:var(--fg-muted)">Monospace Phosphor</span></label>
+          <label for="theme-classic" class="theme-card"><strong>95 Classic</strong><span style="font-size:11px;color:var(--fg-muted)">Teal &amp; Bevel</span></label>
+          <label for="theme-vapor" class="theme-card"><strong>Vaporwave</strong><span style="font-size:11px;color:var(--fg-muted)">Neon Dusk</span></label>
+        </div>
+        <p style="margin-top:14px; font-size:11px; color:var(--fg-muted);">
+          <strong>Persistence:</strong> Zero JavaScript means zero <code>localStorage</code>. Nothing survives a page reload except the URL <code>#hash</code>.
+        </p>
+      </div>
+    </section>
+
+    <!-- WINDOW 8: DRIVERS / SYSTEM INFO -->
+    <section id="win-drivers" class="win" tabindex="0" aria-label="Drivers and System Info">
+      <header class="win-head">
+        <label for="focus-drivers" class="win-title">🔌 System Information — CSSOS Drivers</label>
+        <div class="win-controls">
+          <label for="snap-drivers-left" class="win-btn" title="Snap Left">◧</label>
+          <label for="snap-drivers-right" class="win-btn" title="Snap Right">◨</label>
+          <label for="snap-drivers-max" class="win-btn" title="Maximize">□</label>
+          <label for="snap-drivers-def" class="win-btn" title="Restore">❐</label>
+          <label for="open-drivers" class="win-btn close" title="Close">✕</label>
+        </div>
+      </header>
+      <div class="win-body">
+        <table class="drv-table">
+          <thead>
+            <tr><th>Subsystem</th><th>CSS Driver</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Mouse / Pointer</td><td><code>:hover</code>, <code>:active</code>, <code>&lt;label&gt;</code></td><td><span class="badge-ok">LOADED</span></td></tr>
+            <tr><td>Keyboard</td><td><code>:focus</code>, <code>:focus-within</code>, <code>pattern</code></td><td><span class="badge-ok">LOADED</span></td></tr>
+            <tr><td>Display</td><td>The Cascade + Custom Properties</td><td><span class="badge-ok">LOADED</span></td></tr>
+            <tr><td>Window Bus</td><td><code>:checked</code> + <code>:target</code> + <code>:has()</code></td><td><span class="badge-ok">LOADED</span></td></tr>
+            <tr><td>System Clock</td><td><code>@property --up-sec</code> + <code>steps()</code></td><td><span class="badge-ok">LOADED</span></td></tr>
+            <tr><td>ALU / Math</td><td><code>calc()</code>, <code>mod()</code>, <code>round()</code>, <code>counter()</code></td><td><span class="badge-ok">LOADED</span></td></tr>
+            <tr><td>Storage</td><td>Volatile DOM RAM (<code>#hash</code> only)</td><td><span class="badge-ok">VOLATILE</span></td></tr>
+            <tr><td>Audio</td><td>None (no Web Audio without JS)</td><td><span class="badge-off">OFFLINE</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- FOOTER CREDIT -->
+    <footer class="desktop-credit">
+      <strong>CSSOS</strong> · ConsciousNode SoftWorks (MIT) · Zero JS — nothing survives reload except <code>#hash</code><br>
+      Inspired by Lyra Rebane's <a href="https://lyra.horse/x86css/" target="_blank" rel="noopener">x86CSS</a> &amp; CSS-DOS
+    </footer>
+  </main>
+
+  <!-- === 3. START MENU === -->
+  <aside class="start-menu" aria-label="Start Menu">
+    <strong style="padding:4px 8px; font-size:12px;">CSSOS v1.0</strong>
+    <label for="open-terminal" class="start-item">&gt;_ Terminal</label>
+    <label for="open-files" class="start-item">📁 Files</label>
+    <label for="open-paint" class="start-item">🎨 Paint</label>
+    <label for="open-calc" class="start-item">🧮 Calculator</label>
+    <label for="open-game" class="start-item">💡 Lights Out</label>
+    <label for="open-settings" class="start-item">⚙️ Settings</label>
+    <label for="open-drivers" class="start-item">🔌 Drivers</label>
+    <div class="start-note">No JS. Nothing survives reload except URL <code>#hash</code>.</div>
+  </aside>
+
+  <!-- === 4. TASKBAR === -->
+  <footer class="taskbar">
+    <div class="tb-left">
+      <label for="start-menu-open" class="start-btn">❖ CSSOS</label>
+      <label for="focus-terminal" class="tb-app tb-terminal">&gt;_ Terminal</label>
+      <label for="focus-files" class="tb-app tb-files">📁 Files</label>
+      <label for="focus-viewer" class="tb-app tb-viewer">📄 Viewer</label>
+      <label for="focus-paint" class="tb-app tb-paint">🎨 Paint</label>
+      <label for="focus-calc" class="tb-app tb-calc">🧮 Calc</label>
+      <label for="focus-game" class="tb-app tb-game">💡 Lights Out</label>
+      <label for="focus-settings" class="tb-app tb-settings">⚙️ Settings</label>
+      <label for="focus-drivers" class="tb-app tb-drivers">🔌 Drivers</label>
+    </div>
+    <div class="tb-clock" title="Session Uptime (HH:MM:SS + Balanced Ternary)">
+      <span class="uptime-hms"></span>
+      <span class="uptime-ternary"></span>
+    </div>
+  </footer>
+</div>
+
+</body>
+</html>
